@@ -7,13 +7,13 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
-import { useAuth } from '../../features/auth/authStore';
+import { useAuth } from '../features/auth/authStore';
 import {
   useDispatch,
   useDeleteDispatch,
   useUpdateDispatchStatus,
-} from '../../features/dispatch/dispatchHooks';
-import { downloadSingleExcel } from '../../features/dispatch/dispatchApi';
+} from '../features/dispatch/dispatchHooks';
+import { downloadSingleExcel } from '../features/dispatch/dispatchApi';
 import { STATUS_CONFIG } from '../../lib/constants';
 import type { DispatchStatus } from '../../lib/types';
 

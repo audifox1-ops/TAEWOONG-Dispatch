@@ -11,7 +11,7 @@ import {
   useCreateDispatch,
   useUpdateDispatch,
   useDispatch,
-} from '../../features/dispatch/dispatchHooks';
+} from '../features/dispatch/dispatchHooks';
 
 export default function DispatchFormPage() {
   const { id } = useParams();
