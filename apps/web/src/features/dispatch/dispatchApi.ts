@@ -69,21 +69,42 @@ export async function downloadSingleExcel(id: string, dispatchNo: string): Promi
   window.URL.revokeObjectURL(url);
 }
 
-/** 목록 엑셀 다운로드 (날짜별 시트) */
-export async function downloadListExcel(query: Omit<DispatchQuery, 'page' | 'limit'>): Promise<void> {
-  const response = await apiClient.get('/dispatch/export', {
+async function downloadExcelBlob(
+  query: Omit<DispatchQuery, 'page' | 'limit'>,
+  filename: string,
+): Promise<void> {
+  const response = await apiClient.get('/dispatch/export/list', {
     params: query,
     responseType: 'blob',
   });
   const url = window.URL.createObjectURL(new Blob([response.data]));
   const link = document.createElement('a');
   link.href = url;
-  const today = new Date().toISOString().slice(0, 10);
-  link.setAttribute('download', `배차지시서_목록_${today}.xlsx`);
+  link.setAttribute('download', filename);
   document.body.appendChild(link);
   link.click();
   link.remove();
   window.URL.revokeObjectURL(url);
+}
+
+/** 목록 엑셀 다운로드 (현재 필터 기준) */
+export async function downloadListExcel(query: Omit<DispatchQuery, 'page' | 'limit'>): Promise<void> {
+  const today = new Date().toISOString().slice(0, 10);
+  await downloadExcelBlob(query, `배차지시서_목록_${today}.xlsx`);
+}
+
+/** 기간별 엑셀 다운로드 */
+export async function downloadListExcelByPeriod(
+  query: Omit<DispatchQuery, 'page' | 'limit' | 'month'> & { dateFrom: string; dateTo: string },
+): Promise<void> {
+  await downloadExcelBlob(query, `배차지시서_기간_${query.dateFrom}_${query.dateTo}.xlsx`);
+}
+
+/** 월별 엑셀 다운로드 */
+export async function downloadListExcelByMonth(
+  query: Omit<DispatchQuery, 'page' | 'limit' | 'dateFrom' | 'dateTo'> & { month: string },
+): Promise<void> {
+  await downloadExcelBlob(query, `배차지시서_${query.month}.xlsx`);
 }
 
 // ============ 인증 API ============

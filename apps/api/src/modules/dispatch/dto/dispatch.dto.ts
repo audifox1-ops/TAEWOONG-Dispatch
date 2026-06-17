@@ -8,6 +8,7 @@ import {
   IsInt,
   IsDateString,
   Min,
+  Matches,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { DispatchStatus } from '@prisma/client';
@@ -136,6 +137,11 @@ export class DispatchQueryDto {
   @IsOptional()
   @IsDateString()
   dateTo?: string;
+
+  @ApiPropertyOptional({ example: '2026-06', description: '월별 다운로드 기준 월 (YYYY-MM)' })
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}$/)
+  month?: string;
 
   @ApiPropertyOptional({ description: '출발지 필터' })
   @IsOptional()

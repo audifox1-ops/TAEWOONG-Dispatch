@@ -12,6 +12,33 @@ import {
 export class DispatchService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private resolveDateRange(query: { dateFrom?: string; dateTo?: string; month?: string }) {
+    if (query.month) {
+      const [yearStr, monthStr] = query.month.split('-');
+      const year = Number(yearStr);
+      const monthIndex = Number(monthStr) - 1;
+
+      if (!Number.isNaN(year) && !Number.isNaN(monthIndex) && monthIndex >= 0 && monthIndex < 12) {
+        const from = new Date(year, monthIndex, 1);
+        const to = new Date(year, monthIndex + 1, 0, 23, 59, 59, 999);
+        return { gte: from, lte: to };
+      }
+    }
+
+    if (query.dateFrom || query.dateTo) {
+      const range: Record<string, Date> = {};
+      if (query.dateFrom) range.gte = new Date(query.dateFrom);
+      if (query.dateTo) {
+        const to = new Date(query.dateTo);
+        to.setHours(23, 59, 59, 999);
+        range.lte = to;
+      }
+      return range;
+    }
+
+    return undefined;
+  }
+
   /**
    * 배차번호 자동 생성 (D-YYYYMMDD-NNN)
    * 같은 날짜에 순번을 붙여 유니크한 번호 생성
@@ -35,7 +62,7 @@ export class DispatchService {
    */
   async findAll(query: DispatchQueryDto) {
     const {
-      status, dateFrom, dateTo, origin, destination,
+      status, dateFrom, dateTo, month, origin, destination,
       item, orderRefNo, q, page = 1, limit = 20,
     } = query;
 
@@ -48,14 +75,9 @@ export class DispatchService {
     if (status) where.status = status;
 
     // 날짜 범위 필터
-    if (dateFrom || dateTo) {
-      where.dispatchDate = {};
-      if (dateFrom) (where.dispatchDate as Record<string, unknown>).gte = new Date(dateFrom);
-      if (dateTo) {
-        const to = new Date(dateTo);
-        to.setHours(23, 59, 59, 999);
-        (where.dispatchDate as Record<string, unknown>).lte = to;
-      }
+    const dateRange = this.resolveDateRange({ dateFrom, dateTo, month });
+    if (dateRange) {
+      where.dispatchDate = dateRange;
     }
 
     // 출발지/도착지/품명/수주번호 필터
@@ -341,18 +363,13 @@ export class DispatchService {
    * WHERE 절 공통 빌더 (캐싱 포인트: Redis로 필터 결과 캐싱 가능)
    */
   private buildWhereClause(query: Omit<DispatchQueryDto, 'page' | 'limit'>) {
-    const { status, dateFrom, dateTo, origin, destination, item, orderRefNo, q } = query;
+    const { status, dateFrom, dateTo, month, origin, destination, item, orderRefNo, q } = query;
     const where: Record<string, unknown> = { deletedAt: null };
 
     if (status) where.status = status;
-    if (dateFrom || dateTo) {
-      where.dispatchDate = {};
-      if (dateFrom) (where.dispatchDate as Record<string, unknown>).gte = new Date(dateFrom);
-      if (dateTo) {
-        const to = new Date(dateTo);
-        to.setHours(23, 59, 59, 999);
-        (where.dispatchDate as Record<string, unknown>).lte = to;
-      }
+    const dateRange = this.resolveDateRange({ dateFrom, dateTo, month });
+    if (dateRange) {
+      where.dispatchDate = dateRange;
     }
     if (origin) where.origin = { contains: origin, mode: 'insensitive' };
     if (destination) where.destination = { contains: destination, mode: 'insensitive' };

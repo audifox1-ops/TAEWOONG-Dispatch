@@ -7,9 +7,13 @@ import {
   flexRender,
   ColumnDef,
 } from '@tanstack/react-table';
-import { Download, PlusCircle, Search, FilterX, Calendar } from 'lucide-react';
+import { Download, PlusCircle, Search, FilterX, Calendar, CalendarDays } from 'lucide-react';
 import { useDispatches } from '../features/dispatch/dispatchHooks';
-import { downloadListExcel } from '../features/dispatch/dispatchApi';
+import {
+  downloadListExcel,
+  downloadListExcelByMonth,
+  downloadListExcelByPeriod,
+} from '../features/dispatch/dispatchApi';
 import { useAuth } from '../features/auth/authStore';
 import { STATUS_CONFIG } from '../lib/constants';
 import type { DispatchOrder, DispatchQuery, DispatchStatus } from '../lib/types';
@@ -24,6 +28,11 @@ export default function DispatchListPage() {
     limit: 15,
   });
   const [searchInput, setSearchInput] = useState('');
+  const [periodExport, setPeriodExport] = useState({
+    dateFrom: '',
+    dateTo: '',
+  });
+  const [monthExport, setMonthExport] = useState(new Date().toISOString().slice(0, 7));
 
   // 쿼리 페치
   const { data, isLoading } = useDispatches(query);
@@ -119,16 +128,59 @@ export default function DispatchListPage() {
     setQuery((prev) => ({ ...prev, q: searchInput, page: 1 }));
   };
 
-  // 엑셀 다운로드
+  const getBaseExportQuery = () => {
+    const { page, limit, dateFrom, dateTo, month, ...exportQuery } = query;
+    return exportQuery;
+  };
+
+  // 현재 필터 기준 다운로드
   const handleExcelDownload = async () => {
     try {
       toast.loading('엑셀 파일을 생성 중입니다...', { id: 'excel-export' });
-      // page, limit 제외하고 현재 쿼리 조건으로 요청
-      const { page, limit, ...exportQuery } = query;
+      const exportQuery = getBaseExportQuery();
       await downloadListExcel(exportQuery);
       toast.success('엑셀 다운로드가 완료되었습니다.', { id: 'excel-export' });
     } catch (error) {
       toast.error('엑셀 다운로드에 실패했습니다.', { id: 'excel-export' });
+    }
+  };
+
+  const handlePeriodDownload = async () => {
+    if (!periodExport.dateFrom || !periodExport.dateTo) {
+      toast.error('기간 시작일과 종료일을 모두 선택해주세요.');
+      return;
+    }
+
+    try {
+      toast.loading('기간별 엑셀 파일을 생성 중입니다...', { id: 'excel-export' });
+      const exportQuery = getBaseExportQuery();
+      await downloadListExcelByPeriod({
+        ...exportQuery,
+        dateFrom: periodExport.dateFrom,
+        dateTo: periodExport.dateTo,
+      });
+      toast.success('기간별 엑셀 다운로드가 완료되었습니다.', { id: 'excel-export' });
+    } catch (error) {
+      toast.error('기간별 엑셀 다운로드에 실패했습니다.', { id: 'excel-export' });
+    }
+  };
+
+  const handleMonthDownload = async () => {
+    if (!monthExport) {
+      toast.error('다운로드할 월을 선택해주세요.');
+      return;
+    }
+
+    try {
+      toast.loading('월별 엑셀 파일을 생성 중입니다...', { id: 'excel-export' });
+      const exportQuery = getBaseExportQuery();
+      await downloadListExcelByMonth({
+        ...exportQuery,
+        month: monthExport,
+      });
+      toast.success('월별 엑셀 다운로드가 완료되었습니다.', { id: 'excel-export' });
+    } catch (error) {
+      toast.error('월별 엑셀 다운로드에 실패했습니다.', { id: 'excel-export' });
     }
   };
 
@@ -147,7 +199,7 @@ export default function DispatchListPage() {
                 className="btn-secondary"
               >
                 <Download size={18} />
-                엑셀 다운로드 (날짜별)
+                현재 필터 다운로드
               </button>
               <Link to="/dispatch/new" className="btn-primary">
                 <PlusCircle size={18} />
@@ -211,6 +263,63 @@ export default function DispatchListPage() {
       </div>
 
       {/* 테이블 */}
+      <div className="card">
+        <div className="card-body space-y-4">
+          <div className="flex items-center gap-2">
+            <CalendarDays size={18} className="text-primary-600" />
+            <h2 className="text-lg font-semibold text-slate-800">엑셀 다운로드</h2>
+          </div>
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+            <div className="space-y-3">
+              <label className="form-label text-xs">기간별 다운로드</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input
+                  type="date"
+                  className="form-input"
+                  value={periodExport.dateFrom}
+                  onChange={(e) => setPeriodExport((prev) => ({ ...prev, dateFrom: e.target.value }))}
+                />
+                <input
+                  type="date"
+                  className="form-input"
+                  value={periodExport.dateTo}
+                  onChange={(e) => setPeriodExport((prev) => ({ ...prev, dateTo: e.target.value }))}
+                />
+              </div>
+              <button type="button" className="btn-secondary w-full justify-center" onClick={handlePeriodDownload}>
+                <Download size={18} />
+                기간별 다운로드
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <label className="form-label text-xs">월별 다운로드</label>
+              <input
+                type="month"
+                className="form-input"
+                value={monthExport}
+                onChange={(e) => setMonthExport(e.target.value)}
+              />
+              <button type="button" className="btn-secondary w-full justify-center" onClick={handleMonthDownload}>
+                <Download size={18} />
+                월별 다운로드
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <label className="form-label text-xs">현재 목록 기준 다운로드</label>
+              <p className="text-sm text-slate-500 leading-6">
+                현재 검색 조건을 그대로 반영합니다. 기간별, 월별 다운로드는 별도 조건을 입력해서 받습니다.
+              </p>
+              <button type="button" className="btn-primary w-full justify-center" onClick={handleExcelDownload}>
+                <Download size={18} />
+                현재 필터 다운로드
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="table-container bg-white">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center p-12 text-slate-500">

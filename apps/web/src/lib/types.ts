@@ -88,6 +88,7 @@ export interface DispatchQuery {
   status?: DispatchStatus;
   dateFrom?: string;
   dateTo?: string;
+  month?: string;
   origin?: string;
   destination?: string;
   item?: string;

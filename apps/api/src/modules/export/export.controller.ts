@@ -28,9 +28,9 @@ export class ExportController {
 
   /**
    * 목록 엑셀 다운로드 (날짜별 시트 분리)
-   * GET /dispatch/export?status=&dateFrom=&dateTo=...
-   */
-  @Get('export')
+   * GET /dispatch/export/list?status=&dateFrom=&dateTo=...
+  */
+  @Get('export/list')
   @Roles(Role.ADMIN, Role.DISPATCHER)
   @ApiOperation({
     summary: '배차지시서 목록 엑셀 다운로드 (날짜별 시트 분리)',
@@ -41,7 +41,7 @@ export class ExportController {
     @Res() res: Response,
   ) {
     const buffer = await this.exportService.exportList(query);
-    const filename = `배차지시서_목록_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    const filename = this.buildExportFilename(query);
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
@@ -68,5 +68,21 @@ export class ExportController {
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
     res.send(buffer);
+  }
+
+  private buildExportFilename(query: DispatchQueryDto) {
+    const today = new Date().toISOString().slice(0, 10);
+
+    if (query.month) {
+      return `배차지시서_${query.month}.xlsx`;
+    }
+
+    if (query.dateFrom || query.dateTo) {
+      const from = query.dateFrom || 'start';
+      const to = query.dateTo || 'end';
+      return `배차지시서_기간_${from}_${to}.xlsx`;
+    }
+
+    return `배차지시서_목록_${today}.xlsx`;
   }
 }
