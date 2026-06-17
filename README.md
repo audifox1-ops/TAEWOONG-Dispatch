@@ -29,6 +29,13 @@ cp .env.example .env
 # .env 파일을 열어서 JWT_SECRET, POSTGRES_PASSWORD 등을 변경하세요
 ```
 
+## Local Development Notes
+- If `VITE_API_BASE_URL` is not set, the web app will auto-detect the local API.
+- It checks `http://localhost:5123`, `http://127.0.0.1:5123`, `http://localhost:3000`, then `http://127.0.0.1:3000`.
+- You can still pin the web app to a specific backend by setting `VITE_API_BASE_URL` in `.env`.
+- Dispatch creation saves to the server and then navigates to the detail page on success.
+- The dispatch list page supports Excel export for the current filter, a date range, or a month.
+
 ### 2. Docker로 데이터베이스 실행
 ```bash
 docker compose up -d postgres
