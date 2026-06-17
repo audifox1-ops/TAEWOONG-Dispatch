@@ -1,5 +1,50 @@
-// API 기본 URL 환경변수에서 읽기
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+// API 기본 URL 환경변수 없을 때 개발 환경의 실제 API를 자동 탐지한다.
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+
+const API_BASE_URL_CANDIDATES = [
+  API_BASE_URL,
+  import.meta.env.DEV ? 'http://localhost:5123' : '',
+  import.meta.env.DEV ? 'http://127.0.0.1:5123' : '',
+  import.meta.env.DEV ? 'http://localhost:3000' : '',
+  import.meta.env.DEV ? 'http://127.0.0.1:3000' : '',
+].filter((value): value is string => Boolean(value));
+
+let resolvedApiBaseUrlPromise: Promise<string> | null = null;
+
+async function probeApiBaseUrl(baseUrl: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${baseUrl}/auth/me`, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+      },
+    });
+
+    return response.status !== 404;
+  } catch {
+    return false;
+  }
+}
+
+export async function getApiBaseUrl(): Promise<string> {
+  if (API_BASE_URL) {
+    return API_BASE_URL;
+  }
+
+  if (!resolvedApiBaseUrlPromise) {
+    resolvedApiBaseUrlPromise = (async () => {
+      for (const candidate of API_BASE_URL_CANDIDATES) {
+        if (await probeApiBaseUrl(candidate)) {
+          return candidate;
+        }
+      }
+
+      return 'http://localhost:3000';
+    })();
+  }
+
+  return resolvedApiBaseUrlPromise;
+}
 
 // 출발지/도착지 선택지
 export const LOCATION_OPTIONS = [
@@ -10,7 +55,7 @@ export const LOCATION_OPTIONS = [
   '직접입력',
 ] as const;
 
-// 품명 선택지
+// 품목 선택지
 export const ITEM_OPTIONS = [
   '코깅바',
   'SQ 코깅바',
@@ -49,7 +94,7 @@ export const STATUS_CONFIG = {
   },
 } as const;
 
-// 역할 정보
+// 역할별 정보
 export const ROLE_CONFIG = {
   ADMIN: { label: '관리자', color: 'text-purple-600 bg-purple-50' },
   DISPATCHER: { label: '배차 담당자', color: 'text-blue-600 bg-blue-50' },

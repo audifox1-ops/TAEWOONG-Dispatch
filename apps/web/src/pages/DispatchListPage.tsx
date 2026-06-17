@@ -5,7 +5,7 @@ import {
   getCoreRowModel,
   getPaginationRowModel,
   flexRender,
-  ColumnDef,
+  type ColumnDef,
 } from '@tanstack/react-table';
 import { Download, PlusCircle, Search, FilterX, Calendar, CalendarDays } from 'lucide-react';
 import { useDispatches } from '../features/dispatch/dispatchHooks';
