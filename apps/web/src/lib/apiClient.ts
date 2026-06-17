@@ -1,19 +1,18 @@
 import axios, { AxiosError } from 'axios';
-import { getApiBaseUrl } from './constants';
+import { API_BASE_URL } from './constants';
 
 // Axios 인스턴스 생성
 const apiClient = axios.create({
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
   timeout: 30000,
 });
 
-// 요청 인터셉터: 액세스 토큰과 실제 API 주소를 자동 주입
+// 요청 인터셉터: 액세스 토큰 자동 추가
 apiClient.interceptors.request.use(
-  async (config) => {
-    config.baseURL = await getApiBaseUrl();
-
+  (config) => {
     const token = localStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -36,8 +35,7 @@ apiClient.interceptors.response.use(
       const refreshToken = localStorage.getItem('refreshToken');
       if (refreshToken) {
         try {
-          const baseUrl = await getApiBaseUrl();
-          const { data } = await axios.post(`${baseUrl}/auth/refresh`, { refreshToken });
+          const { data } = await axios.post('/api/auth/refresh', { refreshToken });
           localStorage.setItem('accessToken', data.accessToken);
           originalRequest!.headers!.Authorization = `Bearer ${data.accessToken}`;
           return apiClient(originalRequest!);
