@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Shield, ShieldAlert, UserCog } from 'lucide-react';
 import * as api from '../features/dispatch/dispatchApi';
-import { ROLE_CONFIG } from '../../lib/constants';
+import { ROLE_CONFIG } from '../lib/constants';
 
 export default function UsersPage() {
   const { data: users, isLoading } = useQuery({

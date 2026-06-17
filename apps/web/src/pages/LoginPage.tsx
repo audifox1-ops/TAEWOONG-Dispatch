@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Truck, LogIn } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { loginSchema, type LoginFormData } from '../../lib/schemas';
+import { loginSchema, type LoginFormData } from '../lib/schemas';
 import { useAuth } from '../features/auth/authStore';
 import * as api from '../features/dispatch/dispatchApi';
 

@@ -5,8 +5,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Save, X, ArrowLeft } from 'lucide-react';
-import { dispatchFormSchema, type DispatchFormData } from '../../lib/schemas';
-import { LOCATION_OPTIONS, ITEM_OPTIONS } from '../../lib/constants';
+import { dispatchFormSchema, type DispatchFormData } from '../lib/schemas';
+import { LOCATION_OPTIONS, ITEM_OPTIONS } from '../lib/constants';
 import {
   useCreateDispatch,
   useUpdateDispatch,

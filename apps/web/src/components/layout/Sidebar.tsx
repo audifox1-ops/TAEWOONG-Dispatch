@@ -3,8 +3,8 @@ import {
   LayoutDashboard, ClipboardList, PlusCircle,
   Users, LogOut, Truck, ChevronRight
 } from 'lucide-react';
-import { useAuth } from '../features/auth/authStore';
-import * as api from '../features/dispatch/dispatchApi';
+import { useAuth } from '../../features/auth/authStore';
+import * as api from '../../features/dispatch/dispatchApi';
 import toast from 'react-hot-toast';
 
 const navItems = [

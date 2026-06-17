@@ -1,5 +1,5 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { useAuth } from '../features/auth/authStore';
+import { useAuth } from '../../features/auth/authStore';
 import MainLayout from '../layout/MainLayout';
 import type { Role } from '../../lib/types';
 

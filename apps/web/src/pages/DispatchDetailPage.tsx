@@ -14,8 +14,8 @@ import {
   useUpdateDispatchStatus,
 } from '../features/dispatch/dispatchHooks';
 import { downloadSingleExcel } from '../features/dispatch/dispatchApi';
-import { STATUS_CONFIG } from '../../lib/constants';
-import type { DispatchStatus } from '../../lib/types';
+import { STATUS_CONFIG } from '../lib/constants';
+import type { DispatchStatus } from '../lib/types';
 
 export default function DispatchDetailPage() {
   const { id } = useParams();
