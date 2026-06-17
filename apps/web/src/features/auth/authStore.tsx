@@ -10,30 +10,22 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+const MOCK_ADMIN: AuthUser = {
+  id: 'auto-admin-id',
+  loginId: 'admin',
+  name: '통합 관리자',
+  role: 'ADMIN',
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(() => {
-    try {
-      const stored = localStorage.getItem('dispatch_user');
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
-    }
-  });
+  // 항상 최고 관리자로 로그인되어 있도록 강제 설정
+  const user = MOCK_ADMIN;
+  const isAuthenticated = true;
 
-  const isAuthenticated = !!user && !!localStorage.getItem('accessToken');
-
-  const login = (userData: AuthUser, accessToken: string, refreshToken: string) => {
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
-    localStorage.setItem('dispatch_user', JSON.stringify(userData));
-    setUser(userData);
-  };
-
+  const login = () => {};
   const logout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('dispatch_user');
-    setUser(null);
+    // 로그아웃 기능 제거 시 브라우저 새로고침 효과만 줌
+    window.location.href = '/dashboard';
   };
 
   return (

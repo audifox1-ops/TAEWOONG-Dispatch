@@ -15,8 +15,8 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* 공개 라우트 */}
-          <Route path="/login" element={<LoginPage />} />
+          {/* 로그인 페이지 우회 */}
+          <Route path="/login" element={<Navigate to="/dashboard" replace />} />
 
           {/* 보호된 라우트 (모든 인증된 사용자) */}
           <Route element={<ProtectedRoute />}>
