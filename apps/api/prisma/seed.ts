@@ -1,4 +1,4 @@
-import { PrismaClient, Role, DispatchStatus } from '@prisma/client';
+import { PrismaClient, Role, DispatchStatus, Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -186,7 +186,7 @@ async function main() {
           dispatchOrderId: created.id,
           changedById: orderData.createdById,
           changeType: 'CREATE',
-          afterJson: created as unknown as Record<string, unknown>,
+          afterJson: created as unknown as Prisma.InputJsonValue,
         },
       });
     }

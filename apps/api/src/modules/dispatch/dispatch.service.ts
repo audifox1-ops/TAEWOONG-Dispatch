@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { ChangeType, DispatchStatus, Role } from '@prisma/client';
+import { ChangeType, DispatchStatus, Prisma, Role } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   CreateDispatchDto,
@@ -165,7 +165,7 @@ export class DispatchService {
           dispatchOrderId: created.id,
           changedById: userId,
           changeType: ChangeType.CREATE,
-          afterJson: created as unknown as Record<string, unknown>,
+          afterJson: created as unknown as Prisma.InputJsonValue,
         },
       });
 
@@ -223,8 +223,8 @@ export class DispatchService {
           dispatchOrderId: id,
           changedById: userId,
           changeType: ChangeType.UPDATE,
-          beforeJson: existing as unknown as Record<string, unknown>,
-          afterJson: result as unknown as Record<string, unknown>,
+          beforeJson: existing as unknown as Prisma.InputJsonValue,
+          afterJson: result as unknown as Prisma.InputJsonValue,
         },
       });
 
@@ -256,8 +256,8 @@ export class DispatchService {
           dispatchOrderId: id,
           changedById: userId,
           changeType: ChangeType.STATUS_CHANGE,
-          beforeJson: { status: existing.status } as unknown as Record<string, unknown>,
-          afterJson: { status: updateStatusDto.status } as unknown as Record<string, unknown>,
+          beforeJson: { status: existing.status } as unknown as Prisma.InputJsonValue,
+          afterJson: { status: updateStatusDto.status } as unknown as Prisma.InputJsonValue,
         },
       });
 
@@ -287,7 +287,7 @@ export class DispatchService {
           dispatchOrderId: id,
           changedById: userId,
           changeType: ChangeType.DELETE,
-          beforeJson: existing as unknown as Record<string, unknown>,
+          beforeJson: existing as unknown as Prisma.InputJsonValue,
         },
       });
     });

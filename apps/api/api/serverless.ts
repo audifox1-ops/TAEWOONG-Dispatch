@@ -3,7 +3,7 @@ import { AppModule } from '../src/app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
-let cachedApp;
+let cachedApp: any;
 
 async function bootstrap() {
   if (!cachedApp) {
@@ -38,7 +38,7 @@ async function bootstrap() {
   return cachedApp;
 }
 
-export default async function handler(req, res) {
+export default async function handler(req: any, res: any) {
   const app = await bootstrap();
   return app(req, res);
 }
