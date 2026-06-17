@@ -30,8 +30,9 @@ cp .env.example .env
 ```
 
 ## Local Development Notes
-- The web app uses the Vite dev proxy at `/api`, so `VITE_API_BASE_URL` is optional.
-- By default, `/api` forwards to the local backend on `http://127.0.0.1:5123`.
+- The web app uses `/api` as its default API path, so `VITE_API_BASE_URL` is optional.
+- In `npm run dev`, Vite proxies `/api` to the local backend on `http://127.0.0.1:5123`.
+- If the proxy is not available, the client automatically falls back to local backend addresses such as `127.0.0.1:5123` and `localhost:3000`.
 - You can still set `VITE_API_BASE_URL` in `.env` if you want to point the frontend at a different backend.
 - Dispatch creation saves to the server and then navigates to the detail page on success.
 - The dispatch list page supports Excel export for the current filter, a date range, or a month.

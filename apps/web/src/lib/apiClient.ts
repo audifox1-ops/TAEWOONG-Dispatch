@@ -1,58 +1,115 @@
-import axios, { AxiosError } from 'axios';
+import axios, { type AxiosRequestConfig, type AxiosResponse } from 'axios';
 import { API_BASE_URL } from './constants';
 
-// Axios 인스턴스 생성
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
+const transport = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
   timeout: 30000,
 });
 
-// 요청 인터셉터: 액세스 토큰 자동 추가
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+function getBaseUrlCandidates() {
+  const explicit = API_BASE_URL.trim();
+  if (explicit) {
+    return [explicit];
+  }
+
+  return [
+    '/api',
+    'http://127.0.0.1:5123',
+    'http://localhost:5123',
+    'http://127.0.0.1:3000',
+    'http://localhost:3000',
+  ];
+}
+
+function isLikelyProxyMiss(error: unknown) {
+  if (!axios.isAxiosError(error)) {
+    return false;
+  }
+
+  const status = error.response?.status;
+  return !error.response || status === 404 || status === 502 || status === 503 || status === 504;
+}
+
+async function refreshAccessToken(): Promise<boolean> {
+  const refreshToken = localStorage.getItem('refreshToken');
+  if (!refreshToken) {
+    return false;
+  }
+
+  for (const baseURL of getBaseUrlCandidates()) {
+    try {
+      const response = await transport.post<{ accessToken: string }>(
+        '/auth/refresh',
+        { refreshToken },
+        { baseURL },
+      );
+      localStorage.setItem('accessToken', response.data.accessToken);
+      return true;
+    } catch {
+      // 다음 후보를 시도한다.
     }
+  }
 
-    return config;
-  },
-  (error) => Promise.reject(error),
-);
+  return false;
+}
 
-// 응답 인터셉터: 401이면 refresh 토큰으로 재시도
-apiClient.interceptors.response.use(
-  (response) => response,
-  async (error: AxiosError) => {
-    const originalRequest = error.config as typeof error.config & { _retry?: boolean };
+async function requestWithFallback<T>(config: AxiosRequestConfig, attempt = 0): Promise<AxiosResponse<T>> {
+  const candidates = getBaseUrlCandidates();
+  const baseURL = candidates[attempt] ?? candidates[candidates.length - 1];
+  const headers = {
+    ...(config.headers || {}),
+  } as Record<string, string>;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
+  const token = localStorage.getItem('accessToken');
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
 
-      const refreshToken = localStorage.getItem('refreshToken');
-      if (refreshToken) {
-        try {
-          const { data } = await axios.post('/api/auth/refresh', { refreshToken });
-          localStorage.setItem('accessToken', data.accessToken);
-          originalRequest!.headers!.Authorization = `Bearer ${data.accessToken}`;
-          return apiClient(originalRequest!);
-        } catch {
-          // 리프레시도 실패하면 로그인 화면으로 이동
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('user');
-          window.location.href = '/login';
-        }
-      } else {
-        window.location.href = '/login';
+  try {
+    return await transport.request<T>({
+      ...config,
+      baseURL,
+      headers,
+    });
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 401 && config.url !== '/auth/refresh') {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        const updatedToken = localStorage.getItem('accessToken');
+        return transport.request<T>({
+          ...config,
+          baseURL,
+          headers: {
+            ...headers,
+            Authorization: updatedToken ? `Bearer ${updatedToken}` : headers.Authorization,
+          },
+        });
       }
     }
 
-    return Promise.reject(error);
+    if (isLikelyProxyMiss(error) && attempt + 1 < candidates.length) {
+      return requestWithFallback<T>(config, attempt + 1);
+    }
+
+    throw error;
+  }
+}
+
+const apiClient = {
+  get<T = unknown>(url: string, config?: AxiosRequestConfig) {
+    return requestWithFallback<T>({ ...(config || {}), method: 'get', url });
   },
-);
+  post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig) {
+    return requestWithFallback<T>({ ...(config || {}), method: 'post', url, data });
+  },
+  patch<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig) {
+    return requestWithFallback<T>({ ...(config || {}), method: 'patch', url, data });
+  },
+  delete<T = unknown>(url: string, config?: AxiosRequestConfig) {
+    return requestWithFallback<T>({ ...(config || {}), method: 'delete', url });
+  },
+};
 
 export default apiClient;
