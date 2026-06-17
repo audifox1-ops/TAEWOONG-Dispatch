@@ -1,0 +1,66 @@
+version: '3.9'
+
+services:
+  # PostgreSQL 데이터베이스
+  postgres:
+    image: postgres:16-alpine
+    container_name: dispatch_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-dispatch_db}
+      POSTGRES_USER: ${POSTGRES_USER:-dispatch_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dispatch_pass}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dispatch_user} -d ${POSTGRES_DB:-dispatch_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # NestJS API 서버
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: dispatch_api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-dispatch_user}:${POSTGRES_PASSWORD:-dispatch_pass}@postgres:5432/${POSTGRES_DB:-dispatch_db}
+      JWT_SECRET: ${JWT_SECRET:-super_secret_jwt_key_change_in_production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-super_secret_refresh_key_change_in_production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
+      API_PORT: ${API_PORT:-3000}
+      NODE_ENV: ${NODE_ENV:-development}
+    ports:
+      - "${API_PORT:-3000}:3000"
+    volumes:
+      - ./apps/api:/app
+      - /app/node_modules
+
+  # React 프론트엔드 (개발 서버)
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: dispatch_web
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3000}
+    ports:
+      - "${WEB_PORT:-5173}:5173"
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+
+volumes:
+  postgres_data:
+    driver: local

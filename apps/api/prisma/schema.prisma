@@ -1,0 +1,128 @@
+// Prisma 데이터베이스 스키마
+// 배차지시서 통합 관리 시스템
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================
+// 사용자 역할 열거형
+// ============================
+enum Role {
+  ADMIN      // 관리자: 전체 권한
+  DISPATCHER // 배차 담당자: CRUD + 엑셀 다운로드
+  DRIVER     // 기사: 조회 전용
+}
+
+// ============================
+// 배차지시서 상태 열거형
+// ============================
+enum DispatchStatus {
+  PENDING     // 대기
+  IN_PROGRESS // 진행 중
+  COMPLETED   // 완료
+  CANCELED    // 취소
+}
+
+// ============================
+// 변경 이력 유형 열거형
+// ============================
+enum ChangeType {
+  CREATE        // 생성
+  UPDATE        // 수정
+  DELETE        // 삭제
+  STATUS_CHANGE // 상태 변경
+}
+
+// ============================
+// 사용자 테이블
+// ============================
+model User {
+  id           String   @id @default(uuid())
+  role         Role     @default(DISPATCHER)
+  name         String   // 이름
+  loginId      String   @unique // 로그인 ID (중복 불가)
+  passwordHash String   // bcrypt 해시된 비밀번호
+  phone        String?  // 연락처 (선택)
+  isActive     Boolean  @default(true) // 활성 여부
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 연관 관계
+  dispatchOrders DispatchOrder[]  @relation("CreatedBy")
+  histories      DispatchHistory[] @relation("ChangedBy")
+
+  @@map("users")
+}
+
+// ============================
+// 배차지시서 테이블
+// ============================
+model DispatchOrder {
+  id           String         @id @default(uuid())
+  dispatchNo   String         @unique // 배차번호 (D-YYYYMMDD-NNN 형식)
+  dispatchDate DateTime       @db.Date // 배차 날짜
+
+  origin      String // 출발지
+  destination String // 도착지
+  orderRefNo  String // 수주번호
+  item        String // 품명
+  weightTon   Float  // 중량 (TON)
+  quantity    Int    // 수량
+
+  status DispatchStatus @default(PENDING) // 상태
+
+  note String? // 비고 (선택)
+
+  // 소프트 삭제
+  deletedAt DateTime? // null이면 활성, 값이 있으면 삭제됨
+
+  // 생성자 (담당자)
+  createdById String
+  createdBy   User   @relation("CreatedBy", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 변경 이력
+  histories DispatchHistory[]
+
+  // 인덱스: 조회 성능 최적화
+  @@index([status, dispatchDate]) // 상태+날짜 복합 인덱스
+  @@index([dispatchDate])          // 날짜별 조회
+  @@index([origin])               // 출발지 필터
+  @@index([destination])          // 도착지 필터
+  @@index([item])                 // 품명 필터
+  @@index([orderRefNo])           // 수주번호 검색
+  @@index([deletedAt])            // 소프트 삭제 필터
+  @@map("dispatch_orders")
+}
+
+// ============================
+// 변경 이력 테이블 (감사 로그)
+// ============================
+model DispatchHistory {
+  id              String     @id @default(uuid())
+  dispatchOrderId String     // 배차지시서 ID
+  changedById     String     // 변경자 ID
+  changeType      ChangeType // 변경 유형
+  beforeJson      Json?      // 변경 전 스냅샷 (UPDATE/DELETE 시)
+  afterJson       Json?      // 변경 후 스냅샷 (CREATE/UPDATE 시)
+
+  createdAt DateTime @default(now())
+
+  // 연관 관계
+  dispatchOrder DispatchOrder @relation(fields: [dispatchOrderId], references: [id])
+  changedBy     User          @relation("ChangedBy", fields: [changedById], references: [id])
+
+  @@index([dispatchOrderId]) // 배차지시서별 이력 조회
+  @@index([changedById])     // 사용자별 변경 이력 조회
+  @@index([createdAt])       // 시간순 조회
+  @@map("dispatch_histories")
+}
