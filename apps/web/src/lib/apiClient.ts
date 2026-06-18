@@ -9,18 +9,19 @@ const transport = axios.create({
 });
 
 function getBaseUrlCandidates() {
+  if (import.meta.env.PROD) {
+    return ['/api'];
+  }
+
   const explicit = API_BASE_URL.trim();
   const candidates = [
     '/api',
+    ...(explicit && explicit !== '/api' ? [explicit] : []),
     'http://127.0.0.1:5123',
     'http://localhost:5123',
     'http://127.0.0.1:3000',
     'http://localhost:3000',
   ];
-
-  if (explicit && !candidates.includes(explicit)) {
-    candidates.splice(1, 0, explicit);
-  }
 
   return candidates;
 }
