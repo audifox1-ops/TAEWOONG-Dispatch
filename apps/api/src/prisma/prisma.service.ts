@@ -1,6 +1,5 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
-import { ensureCoreUsers } from './core-users';
 import { requireDatabaseUrl } from '../../prisma/database-url';
 
 @Injectable()
@@ -20,9 +19,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   }
 
   async onModuleInit() {
-    // Start DB connection and make sure the core accounts exist.
-    await this.$connect();
-    await ensureCoreUsers(this);
+    // Prisma connects lazily on the first query in production.
+    // Avoid blocking cold starts on DB connectivity during startup.
   }
 
   async onModuleDestroy() {
