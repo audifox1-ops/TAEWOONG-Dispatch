@@ -10,17 +10,19 @@ const transport = axios.create({
 
 function getBaseUrlCandidates() {
   const explicit = API_BASE_URL.trim();
-  if (explicit) {
-    return [explicit];
-  }
-
-  return [
+  const candidates = [
     '/api',
     'http://127.0.0.1:5123',
     'http://localhost:5123',
     'http://127.0.0.1:3000',
     'http://localhost:3000',
   ];
+
+  if (explicit && !candidates.includes(explicit)) {
+    candidates.splice(1, 0, explicit);
+  }
+
+  return candidates;
 }
 
 function isLikelyProxyMiss(error: unknown) {

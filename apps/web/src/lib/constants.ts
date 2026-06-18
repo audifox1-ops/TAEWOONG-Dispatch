@@ -1,4 +1,4 @@
-// In local development we rely on the Vite dev proxy, so no API env var is needed.
+// Prefer same-origin `/api` so deployed web traffic stays on one origin.
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 // 출발지/도착지 선택지
