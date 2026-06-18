@@ -1,11 +1,17 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { ensureCoreUsers } from './core-users';
+import { requireDatabaseUrl } from '../../prisma/database-url';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   constructor() {
     super({
+      datasources: {
+        db: {
+          url: requireDatabaseUrl(),
+        },
+      },
       log:
         process.env.NODE_ENV === 'development'
           ? ['query', 'info', 'warn', 'error']

@@ -1,7 +1,14 @@
 import { PrismaClient, Role, DispatchStatus, Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { requireDatabaseUrl } from './database-url';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: requireDatabaseUrl(),
+    },
+  },
+});
 
 const BCRYPT_ROUNDS = 12;
 
