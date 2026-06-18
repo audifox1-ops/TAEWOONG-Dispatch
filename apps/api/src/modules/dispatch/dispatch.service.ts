@@ -3,10 +3,23 @@ import { ChangeType, DispatchStatus, Prisma, Role } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   CreateDispatchDto,
+  CreateDispatchBatchDto,
   UpdateDispatchDto,
   UpdateStatusDto,
   DispatchQueryDto,
 } from './dto/dispatch.dto';
+
+type DispatchOrderWithCreator = Prisma.DispatchOrderGetPayload<{
+  include: {
+    createdBy: {
+      select: {
+        id: true;
+        name: true;
+        loginId: true;
+      };
+    };
+  };
+}>;
 
 @Injectable()
 export class DispatchService {
@@ -54,6 +67,12 @@ export class DispatchService {
     });
 
     const seq = String(count + 1).padStart(3, '0'); // 001, 002, ...
+    return `D-${dateStr}-${seq}`;
+  }
+
+  private generateDispatchNoBySequence(date: Date, sequence: number): string {
+    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
+    const seq = String(sequence).padStart(3, '0');
     return `D-${dateStr}-${seq}`;
   }
 
@@ -195,6 +214,69 @@ export class DispatchService {
     });
 
     return order;
+  }
+
+  /**
+   * 같은 날짜의 배차지시서를 여러 건 한 번에 생성
+   */
+  async createBatch(
+    createBatchDto: CreateDispatchBatchDto,
+    userId: string,
+  ) {
+    const dispatchDate = new Date(createBatchDto.dispatchDate);
+
+    return this.prisma.$transaction(async (tx) => {
+      const existingCount = await tx.dispatchOrder.count({
+        where: {
+          dispatchNo: {
+            startsWith: `D-${createBatchDto.dispatchDate.replace(/-/g, '')}-`,
+          },
+        },
+      });
+
+      const results: DispatchOrderWithCreator[] = [];
+
+      for (const [index, item] of createBatchDto.items.entries()) {
+        const dispatchNo = this.generateDispatchNoBySequence(
+          dispatchDate,
+          existingCount + index + 1,
+        );
+
+        const created = await tx.dispatchOrder.create({
+          data: {
+            dispatchNo,
+            dispatchDate,
+            origin: item.origin,
+            destination: item.destination,
+            orderRefNo: item.orderRefNo,
+            item: item.item,
+            weightTon: item.weightTon,
+            quantity: item.quantity,
+            note: item.note,
+            status: DispatchStatus.PENDING,
+            createdById: userId,
+          },
+          include: {
+            createdBy: {
+              select: { id: true, name: true, loginId: true },
+            },
+          },
+        });
+
+        await tx.dispatchHistory.create({
+          data: {
+            dispatchOrderId: created.id,
+            changedById: userId,
+            changeType: ChangeType.CREATE,
+            afterJson: created as unknown as Prisma.InputJsonValue,
+          },
+        });
+
+        results.push(created);
+      }
+
+      return results;
+    });
   }
 
   /**

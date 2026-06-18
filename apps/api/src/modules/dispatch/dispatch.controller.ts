@@ -21,6 +21,7 @@ import { Role } from '@prisma/client';
 import { DispatchService } from './dispatch.service';
 import {
   CreateDispatchDto,
+  CreateDispatchBatchDto,
   UpdateDispatchDto,
   UpdateStatusDto,
   DispatchQueryDto,
@@ -58,6 +59,16 @@ export class DispatchController {
     @CurrentUser() user: AuthUser,
   ) {
     return this.dispatchService.create(createDto, user.id);
+  }
+
+  @Post('batch')
+  @Roles(Role.ADMIN, Role.DISPATCHER)
+  @ApiOperation({ summary: '같은 날짜 배차지시서 일괄 생성' })
+  createBatch(
+    @Body() createBatchDto: CreateDispatchBatchDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.dispatchService.createBatch(createBatchDto, user.id);
   }
 
   @Get(':id')

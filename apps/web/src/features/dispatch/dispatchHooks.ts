@@ -1,6 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import type { DispatchQuery, CreateDispatchRequest, UpdateDispatchRequest } from '../../lib/types';
+import type {
+  DispatchQuery,
+  CreateDispatchRequest,
+  CreateDispatchBatchRequest,
+  UpdateDispatchRequest,
+} from '../../lib/types';
 import * as api from './dispatchApi';
 
 // 쿼리 키 상수
@@ -48,6 +53,21 @@ export function useCreateDispatch() {
     },
     onError: () => {
       toast.error('배차지시서 생성에 실패했습니다.');
+    },
+  });
+}
+
+/** 배차지시서 일괄 생성 뮤테이션 */
+export function useCreateDispatchBatch() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateDispatchBatchRequest) => api.createDispatchBatch(payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: DISPATCH_KEYS.all });
+      toast.success('배차지시서가 일괄 생성되었습니다.');
+    },
+    onError: () => {
+      toast.error('배차지시서 일괄 생성에 실패했습니다.');
     },
   });
 }

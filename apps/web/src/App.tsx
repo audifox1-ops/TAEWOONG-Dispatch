@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import DispatchListPage from './pages/DispatchListPage';
 import DispatchFormPage from './pages/DispatchFormPage';
+import DispatchBatchFormPage from './pages/DispatchBatchFormPage';
 import DispatchDetailPage from './pages/DispatchDetailPage';
 import UsersPage from './pages/UsersPage';
 
@@ -28,7 +29,7 @@ export default function App() {
 
           {/* 보호된 라우트 (관리자/담당자만) */}
           <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'DISPATCHER']} />}>
-            <Route path="/dispatch/new" element={<DispatchFormPage />} />
+            <Route path="/dispatch/new" element={<DispatchBatchFormPage />} />
             <Route path="/dispatch/:id/edit" element={<DispatchFormPage />} />
           </Route>
 

@@ -9,6 +9,9 @@ import {
   IsDateString,
   Min,
   Matches,
+  IsArray,
+  ArrayMinSize,
+  ValidateNested,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { DispatchStatus } from '@prisma/client';
@@ -64,6 +67,58 @@ export class CreateDispatchDto {
   @IsOptional()
   @IsString()
   note?: string;
+}
+
+export class CreateDispatchItemDto {
+  @ApiProperty({ example: 'P15', description: '출발지' })
+  @IsString()
+  @IsNotEmpty({ message: '출발지를 입력해주세요.' })
+  origin: string;
+
+  @ApiProperty({ example: '단부착', description: '도착지' })
+  @IsString()
+  @IsNotEmpty({ message: '도착지를 입력해주세요.' })
+  destination: string;
+
+  @ApiProperty({ example: 'ORD-2026-001', description: '수주번호' })
+  @IsString()
+  @IsNotEmpty({ message: '수주번호를 입력해주세요.' })
+  orderRefNo: string;
+
+  @ApiProperty({ example: '코팅판', description: '품명' })
+  @IsString()
+  @IsNotEmpty({ message: '품명을 입력해주세요.' })
+  item: string;
+
+  @ApiProperty({ example: 5.5, description: '중량 (TON)' })
+  @IsNumber({}, { message: '중량은 숫자여야 합니다.' })
+  @IsPositive({ message: '중량은 0보다 커야 합니다.' })
+  @Type(() => Number)
+  weightTon: number;
+
+  @ApiProperty({ example: 3, description: '수량' })
+  @IsInt({ message: '수량은 정수여야 합니다.' })
+  @Min(1, { message: '수량은 1 이상이어야 합니다.' })
+  @Type(() => Number)
+  quantity: number;
+
+  @ApiPropertyOptional({ example: '비고 없음', description: '비고' })
+  @IsOptional()
+  @IsString()
+  note?: string;
+}
+
+export class CreateDispatchBatchDto {
+  @ApiProperty({ example: '2026-06-17', description: '배차 날짜 (YYYY-MM-DD)' })
+  @IsDateString({}, { message: '올바른 날짜 형식(YYYY-MM-DD)으로 입력해주세요.' })
+  dispatchDate: string;
+
+  @ApiProperty({ type: [CreateDispatchItemDto], description: '한 번에 저장할 배차 목록' })
+  @IsArray()
+  @ArrayMinSize(1, { message: '최소 1건 이상 입력해주세요.' })
+  @ValidateNested({ each: true })
+  @Type(() => CreateDispatchItemDto)
+  items: CreateDispatchItemDto[];
 }
 
 export class UpdateDispatchDto {

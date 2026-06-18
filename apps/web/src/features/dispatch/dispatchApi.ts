@@ -4,6 +4,7 @@ import type {
   DispatchQuery,
   PaginatedResponse,
   CreateDispatchRequest,
+  CreateDispatchBatchRequest,
   UpdateDispatchRequest,
   DispatchHistory,
 } from '../../lib/types';
@@ -25,6 +26,13 @@ export async function fetchDispatch(id: string): Promise<DispatchOrder> {
 /** 생성 */
 export async function createDispatch(payload: CreateDispatchRequest): Promise<DispatchOrder> {
   const { data } = await apiClient.post('/dispatch', payload);
+  return data;
+}
+
+export async function createDispatchBatch(
+  payload: CreateDispatchBatchRequest,
+): Promise<DispatchOrder[]> {
+  const { data } = await apiClient.post('/dispatch/batch', payload);
   return data;
 }
 

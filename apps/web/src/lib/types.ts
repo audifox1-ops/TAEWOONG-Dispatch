@@ -110,4 +110,19 @@ export interface CreateDispatchRequest {
   note?: string;
 }
 
+export interface CreateDispatchBatchItemRequest {
+  origin: string;
+  destination: string;
+  orderRefNo: string;
+  item: string;
+  weightTon: number;
+  quantity: number;
+  note?: string;
+}
+
+export interface CreateDispatchBatchRequest {
+  dispatchDate: string;
+  items: CreateDispatchBatchItemRequest[];
+}
+
 export type UpdateDispatchRequest = Partial<CreateDispatchRequest>;
